@@ -26,13 +26,14 @@ MODEL_ID = os.environ.get(
     "MODEL_ID",
     "Qwen/Qwen2.5-0.5B-Instruct"
 )
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 app = FastAPI(
     title="serving-stack",
     version="wk2"
 )
 
-print(f"Loading {MODEL_ID} on CPU...")
+print(f"Loading {MODEL_ID} on {device}...")
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
@@ -41,7 +42,7 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.float32
 )
 
-model.to("cpu")
+model.to(device)
 model.eval()
 
 print("Model ready")
@@ -74,7 +75,7 @@ def _build_inputs(req: ChatCompletionRequest):
         add_generation_prompt=True,
         return_tensors="pt",
     )
-
+    input_ids = input_ids.to(device)
     return input_ids, input_ids.shape[1]
 
 
