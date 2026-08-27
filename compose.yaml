@@ -1,6 +1,8 @@
 services:
-  serving:
-    image: ${IMAGE}
+  serving-cpu-v1:
+    image: ahmedhhb/aidc-serving:cpu-v1
+    container_name: serving
+    profiles: ["cpu-v1"]
 
     ports:
       - "${HOST_PORT}:8000"
@@ -21,6 +23,64 @@ services:
       timeout: 5s
       retries: 5
       start_period: 120s
+
+  serving-cpu-v2:
+    image: ahmedhhb/aidc-serving:cpu-v2
+    container_name: serving
+    profiles: ["cpu-v2"]
+
+    ports:
+      - "${HOST_PORT}:8000"
+
+    environment:
+      MODEL_ID: ${MODEL_ID}
+      API_KEY: ${API_KEY}
+      MAX_TOKENS: ${MAX_TOKENS}
+
+    volumes:
+      - hf-cache:/home/app/.cache/huggingface
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+  serving-gpu-v1:
+    image: ahmedhhb/aidc-serving:gpu-v1
+    container_name: serving
+    profiles: ["gpu-v1"]
+
+    ports:
+      - "${HOST_PORT}:8000"
+
+    environment:
+      MODEL_ID: ${MODEL_ID}
+      API_KEY: ${API_KEY}
+      MAX_TOKENS: ${MAX_TOKENS}
+
+    volumes:
+      - hf-cache:/home/app/.cache/huggingface
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
 volumes:
   hf-cache:
